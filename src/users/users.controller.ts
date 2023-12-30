@@ -4,7 +4,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from 'src/iam/decorators/user.decorator';
 import { ActiveUserData } from 'src/iam/interfaces/active-user-data.interface';
 
-@Controller('api/v1/users')
+@Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 

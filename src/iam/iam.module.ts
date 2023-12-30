@@ -5,12 +5,17 @@ import { BcryptService } from './bcrypt.service';
 import { ConfigModule } from '@nestjs/config';
 import jwtConfig from './config/jwt.config';
 import { MongooseModule } from '@nestjs/mongoose';
-import { User, UserSchemaFactory } from 'src/users/entities/user.entity';
+import {
+  User,
+  UserSchema,
+  UserSchemaFactory,
+} from 'src/users/entities/user.entity';
 import { JwtModule } from '@nestjs/jwt';
 import { AuthenticationService } from './authentication/authentication.service';
 import { APP_GUARD } from '@nestjs/core';
 import { AccessTokenGuard } from './authentication/guards/access-token.guard';
 import { AuthenticationGuard } from './authentication/guards/authentication.guard';
+import { Token, TokenSchema } from 'src/users/entities/token.entity';
 
 @Module({
   imports: [
@@ -18,6 +23,10 @@ import { AuthenticationGuard } from './authentication/guards/authentication.guar
       {
         name: User.name,
         useFactory: UserSchemaFactory,
+      },
+      {
+        name: Token.name,
+        useFactory: () => TokenSchema,
       },
     ]),
     JwtModule.registerAsync(jwtConfig.asProvider()),

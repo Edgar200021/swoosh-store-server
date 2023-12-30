@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { hash } from 'bcrypt';
-import { Document, Schema as MongooseSchema } from 'mongoose';
+import { Document } from 'mongoose';
 import { UserRole } from '../enums/user-roles.enum';
 
 @Schema()
@@ -8,10 +8,13 @@ export class User extends Document {
   @Prop()
   name: string;
 
-  @Prop({ unique: true })
+  @Prop({
+    unique: true,
+    required: [true, 'Укажите эл. адрес пользователя'],
+  })
   email: string;
 
-  @Prop({ minlength: 10 })
+  @Prop({ minlength: 10, required: [true, 'Укажите пароль'] })
   password: string;
 
   @Prop({
@@ -50,7 +53,7 @@ export class User extends Document {
 
 export const UserSchema = SchemaFactory.createForClass(User);
 
-export const UserSchemaFactory = (): MongooseSchema<User> => {
+export const UserSchemaFactory = () => {
   UserSchema.pre<User>('save', async function (next) {
     if (!this.isModified('password')) return next();
 

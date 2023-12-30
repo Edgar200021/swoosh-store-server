@@ -13,11 +13,14 @@ import { SignUpDto } from './dto/sign-up.dto';
 import { SignInDto } from './dto/sign-in.dto';
 import jwtConfig from '../config/jwt.config';
 import { ConfigType } from '@nestjs/config';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { Token } from 'src/users/entities/token.entity';
 
 @Injectable()
 export class AuthenticationService {
   constructor(
     @InjectModel(User.name) private readonly userModel: Model<User>,
+    @InjectModel(Token.name) private readonly tokenModel: Model<Token>,
     private readonly hashingService: HashingService,
     private readonly jwtService: JwtService,
     @Inject(jwtConfig.KEY)
@@ -43,7 +46,28 @@ export class AuthenticationService {
     return await this.generateTokens(user);
   }
 
-  async refreshTokens() {}
+  async refreshTokens(refreshTokenDto: RefreshTokenDto) {
+    try {
+      const { id } = await this.jwtService.verifyAsync(
+        refreshTokenDto.refreshToken,
+        {
+          secret: this.jwtConfiguration.secret,
+          audience: this.jwtConfiguration.audience,
+          issuer: this.jwtConfiguration.issuer,
+        },
+      );
+
+      const user = await this.userModel.findById(id);
+      if (!user) throw new UnauthorizedException();
+
+      const token = await this.tokenModel.find({ user: user._id });
+      if (!token) throw new UnauthorizedException();
+
+      return this.generateTokens(user);
+    } catch (error) {
+      throw new UnauthorizedException();
+    }
+  }
 
   private async signToken<T>(
     id: string | number | Schema.Types.ObjectId,
@@ -67,13 +91,26 @@ export class AuthenticationService {
         this.signToken(user._id, this.jwtConfiguration.accessTokenTtl, {
           role: user.role,
         }),
-        this.signToken(user._id, this.jwtConfiguration.refreshTokenTtl, {
-          role: user.role,
-        }),
+        this.tokenModel.findOne({ user: user._id }),
       ]);
 
-      return { accessToken, refreshToken };
+      if (refreshToken) {
+        return { accessToken, refreshToken: refreshToken.refreshToken };
+      }
+
+      const newRefreshToken = await this.signToken(
+        user._id,
+        this.jwtConfiguration.refreshTokenTtl,
+      );
+
+      const token = await this.tokenModel.create({
+        user: user._id,
+        refreshToken: newRefreshToken,
+      });
+
+      return { accessToken, refreshToken: token.refreshToken };
     } catch (error) {
+      console.log(error);
       throw new UnauthorizedException();
     }
   }
