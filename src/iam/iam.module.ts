@@ -1,24 +1,22 @@
+import { ConfigModule } from '@nestjs/config';
 import { Module } from '@nestjs/common';
+import { AuthenticationService } from './authentication/authentication.service';
 import { AuthenticationController } from './authentication/authentication.controller';
+import jwtConfig from './config/jwt.config';
+import { JwtModule } from '@nestjs/jwt';
+import { MongooseModule } from '@nestjs/mongoose';
+import { User, UserSchemaFactory } from 'src/users/entity/user.entity';
+import { Token, TokenSchema } from 'src/users/entity/token.entity';
 import { HashingService } from './hashing.service';
 import { BcryptService } from './bcrypt.service';
-import { ConfigModule } from '@nestjs/config';
-import jwtConfig from './config/jwt.config';
-import { MongooseModule } from '@nestjs/mongoose';
-import {
-  User,
-  UserSchema,
-  UserSchemaFactory,
-} from 'src/users/entities/user.entity';
-import { JwtModule } from '@nestjs/jwt';
-import { AuthenticationService } from './authentication/authentication.service';
 import { APP_GUARD } from '@nestjs/core';
-import { AccessTokenGuard } from './authentication/guards/access-token.guard';
-import { AuthenticationGuard } from './authentication/guards/authentication.guard';
-import { Token, TokenSchema } from 'src/users/entities/token.entity';
+import { AuthenticationGuard } from './authentication/guard/authentication.guard';
+import { RestrictGuard } from './authorization/guards/restrict.guard';
 
 @Module({
   imports: [
+    ConfigModule.forFeature(jwtConfig),
+    JwtModule.registerAsync(jwtConfig.asProvider()),
     MongooseModule.forFeatureAsync([
       {
         name: User.name,
@@ -29,21 +27,13 @@ import { Token, TokenSchema } from 'src/users/entities/token.entity';
         useFactory: () => TokenSchema,
       },
     ]),
-    JwtModule.registerAsync(jwtConfig.asProvider()),
-    ConfigModule.forFeature(jwtConfig),
+  ],
+  providers: [
+    AuthenticationService,
+    { provide: HashingService, useClass: BcryptService },
+    { provide: APP_GUARD, useClass: AuthenticationGuard },
+    { provide: APP_GUARD, useClass: RestrictGuard },
   ],
   controllers: [AuthenticationController],
-  providers: [
-    {
-      provide: HashingService,
-      useClass: BcryptService,
-    },
-    AuthenticationService,
-    {
-      provide: APP_GUARD,
-      useClass: AuthenticationGuard,
-    },
-    AccessTokenGuard,
-  ],
 })
 export class IamModule {}

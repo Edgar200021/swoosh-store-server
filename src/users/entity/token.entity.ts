@@ -7,11 +7,7 @@ export class Token extends Document {
   @Prop({ required: [true, 'Укажите токен'] })
   refreshToken: string;
 
-  @Prop({
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: [true, 'Укажите ID пользователя'],
-  })
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User' })
   user: User;
 }
 
