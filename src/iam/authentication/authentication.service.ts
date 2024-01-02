@@ -1,19 +1,26 @@
-import { SignInDto } from './../dto/signin.dto';
+import { ResetPasswordQueryDto } from './../dto/reset-password-query.dto';
+import { SignInDto } from '../dto/sign-in.dto';
 import {
   BadRequestException,
+  ForbiddenException,
   Inject,
   Injectable,
-  UnauthorizedException,
+  NotFoundException,
 } from '@nestjs/common';
+
 import { JwtService } from '@nestjs/jwt';
 import jwtConfig from '../config/jwt.config';
 import { ConfigType } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import { User } from 'src/users/entity/user.entity';
 import { Model } from 'mongoose';
-import { SignUpDto } from '../dto/signup.dto';
+import { SignUpDto } from '../dto/sign-up.dto';
 import { Token } from 'src/users/entity/token.entity';
 import { HashingService } from '../hashing.service';
+import { EmailService } from 'src/common/services/mail.service';
+import { randomUUID } from 'crypto';
+import { ForgotPasswordDto } from '../dto/forgot-password.dto';
+import { ResetPasswordDto } from '../dto/reset-password.dto';
 
 @Injectable()
 export class AuthenticationService {
@@ -24,9 +31,20 @@ export class AuthenticationService {
     private readonly jwtConfiguration: ConfigType<typeof jwtConfig>,
     private readonly jwtService: JwtService,
     private readonly hashingService: HashingService,
+    private readonly emailService: EmailService,
   ) {}
 
   async signUp(signUpDto: SignUpDto) {
+    const isUserExists = await this.userModel.findOne({
+      email: signUpDto.email,
+    });
+
+    if (isUserExists) {
+      throw new BadRequestException(
+        `Пользователь с таким эл. адресом уже существует`,
+      );
+    }
+
     const hashedPassword = await this.hashingService.hash(signUpDto.password);
 
     const user = await this.userModel.create({
@@ -42,6 +60,7 @@ export class AuthenticationService {
       user: { id: user._id, email: user.email, role: user.role },
     };
   }
+
   async signIn(signInDto: SignInDto) {
     const user = await this.userModel
       .findOne({ email: signInDto.email })
@@ -52,7 +71,7 @@ export class AuthenticationService {
       !(await this.hashingService.compare(signInDto.password, user.password))
     )
       throw new BadRequestException(
-        'Не валидный пароль или эл.адрес пользователя',
+        'Не правильный пароль или эл.адрес пользователя',
       );
 
     const { accessToken, refreshToken } = await this.generateTokens(user);
@@ -63,13 +82,14 @@ export class AuthenticationService {
       user: { id: user._id, email: user.email, role: user.role },
     };
   }
+
   async logout(userId: User['_id']) {
     await this.tokenModel.findOneAndDelete({ user: userId });
   }
-  async refreshTokens(refreshTokenDto: string, userId: User['_id']) {
+
+  async refreshTokens(refreshTokenDto: string) {
     if (!refreshTokenDto) {
-      await this.tokenModel.findOneAndDelete({ user: userId });
-      throw new UnauthorizedException('');
+      throw new ForbiddenException();
     }
 
     try {
@@ -79,12 +99,72 @@ export class AuthenticationService {
 
       const user = await this.userModel.findById(id);
 
-      if (!user) throw new UnauthorizedException('');
+      if (!user) throw new ForbiddenException();
 
-      return this.generateTokens(user);
+      const { accessToken, refreshToken } = await this.generateTokens(user);
+
+      return {
+        accessToken,
+        refreshToken,
+        user: { id: user._id, email: user.email, role: user.role },
+      };
     } catch (error) {
-      throw new Error(error);
+      throw new ForbiddenException();
     }
+  }
+
+  async forgotPassword({ email }: ForgotPasswordDto) {
+    const user = await this.userModel.findOne({ email });
+
+    if (!user)
+      throw new NotFoundException(
+        'Пользователь с таким эл․адресом не существует',
+      );
+
+    const passwordResetToken = randomUUID();
+
+    user.passwordResetToken =
+      await this.hashingService.hash(passwordResetToken);
+    user.passwordResetExpires = new Date(new Date().getTime() + 600000);
+
+    await Promise.all([
+      await this.emailService.sendPasswordResetEmail(email, passwordResetToken),
+      await user.save({ validateBeforeSave: false }),
+    ]);
+  }
+
+  async resetPassword(
+    resetPasswordQuery: ResetPasswordQueryDto,
+    resetPasswordDto: ResetPasswordDto,
+  ) {
+    const user = await this.userModel.findOne({
+      email: resetPasswordQuery.email,
+      passwordResetExpires: {
+        $gt: new Date(),
+      },
+    });
+
+    if (!user)
+      throw new BadRequestException(
+        'Пользователь не существует,или время истечении срока восстановления пароля истек',
+      );
+
+    const isTokenMatch = await this.hashingService.compare(
+      resetPasswordQuery.passwordResetToken,
+      user.passwordResetToken,
+    );
+
+    if (!isTokenMatch) throw new BadRequestException('Не валидный токен');
+
+    const hashedPassword = await this.hashingService.hash(
+      resetPasswordDto.password,
+    );
+
+    user.password = hashedPassword;
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+
+    await user.save({ validateBeforeSave: false });
   }
 
   private async signToken<T>(
@@ -110,10 +190,10 @@ export class AuthenticationService {
       this.signToken(user._id, this.jwtConfiguration.refreshTokenTtl),
     ]);
 
-    const tokens = await this.tokenModel.find({ user: user._id });
-
-    if (!tokens.length)
-      await this.tokenModel.create({ refreshToken, user: user._id });
+    await Promise.all([
+      this.tokenModel.findOneAndDelete({ user: user._id }),
+      this.tokenModel.create({ refreshToken, user: user._id }),
+    ]);
 
     return { accessToken, refreshToken };
   }

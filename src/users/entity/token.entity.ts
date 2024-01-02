@@ -2,7 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, { Document } from 'mongoose';
 import { User } from './user.entity';
 
-@Schema()
+@Schema({ timestamps: true })
 export class Token extends Document {
   @Prop({ required: [true, 'Укажите токен'] })
   refreshToken: string;

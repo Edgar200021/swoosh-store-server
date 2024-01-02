@@ -12,6 +12,7 @@ import { BcryptService } from './bcrypt.service';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthenticationGuard } from './authentication/guard/authentication.guard';
 import { RestrictGuard } from './authorization/guards/restrict.guard';
+import { EmailService } from 'src/common/services/mail.service';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { RestrictGuard } from './authorization/guards/restrict.guard';
     { provide: HashingService, useClass: BcryptService },
     { provide: APP_GUARD, useClass: AuthenticationGuard },
     { provide: APP_GUARD, useClass: RestrictGuard },
+    EmailService,
   ],
   controllers: [AuthenticationController],
 })

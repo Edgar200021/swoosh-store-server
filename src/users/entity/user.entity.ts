@@ -34,6 +34,12 @@ export class User extends Document {
     default: [UserRoles.USER],
   })
   role: UserRoles[];
+
+  @Prop()
+  passwordResetToken: string;
+
+  @Prop()
+  passwordResetExpires: Date;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

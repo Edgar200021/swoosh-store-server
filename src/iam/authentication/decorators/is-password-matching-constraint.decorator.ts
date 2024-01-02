@@ -3,7 +3,7 @@ import {
   ValidatorConstraint,
   ValidatorConstraintInterface,
 } from 'class-validator';
-import { SignUpDto } from 'src/iam/dto/signup.dto';
+import { SignUpDto } from 'src/iam/dto/sign-up.dto';
 
 @ValidatorConstraint({ async: false, name: 'isPasswordMatching' })
 export class IsPasswordMatchingConstraint

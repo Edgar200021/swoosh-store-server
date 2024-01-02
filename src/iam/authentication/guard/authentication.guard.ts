@@ -51,7 +51,7 @@ export class AuthenticationGuard implements CanActivate {
       req[REQUEST_USER_KEY] = user;
     } catch (error) {
       console.log(error);
-      throw new Error(error);
+      throw new UnauthorizedException();
     }
 
     return true;
