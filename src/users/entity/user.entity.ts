@@ -46,6 +46,8 @@ export const UserSchema = SchemaFactory.createForClass(User);
 
 export const UserSchemaFactory = () => {
   UserSchema.pre('save', function (next) {
+    if (!this.passwordConfirm) return next();
+
     this.passwordConfirm = undefined;
     return next();
   });

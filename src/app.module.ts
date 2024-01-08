@@ -7,6 +7,8 @@ import { UsersController } from './users/users.controller';
 import { APP_FILTER } from '@nestjs/core';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { MailerModule } from '@nestjs-modules/mailer';
+import { ProductsModule } from './products/products.module';
+import { MulterModule } from '@nestjs/platform-express';
 
 @Module({
   imports: [
@@ -34,7 +36,11 @@ import { MailerModule } from '@nestjs-modules/mailer';
       }),
       inject: [ConfigService],
     }),
+    MulterModule.register({
+      dest: 'uploads',
+    }),
     IamModule,
+    ProductsModule,
   ],
   controllers: [UsersController],
   providers: [

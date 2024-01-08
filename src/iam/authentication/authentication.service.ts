@@ -6,6 +6,7 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 
 import { JwtService } from '@nestjs/jwt';
@@ -165,6 +166,22 @@ export class AuthenticationService {
     user.passwordResetExpires = undefined;
 
     await user.save({ validateBeforeSave: false });
+  }
+
+  async changePassword(
+    userId: User['_id'],
+    changePasswordDto: ResetPasswordDto,
+  ) {
+    const hashedPassword = await this.hashingService.hash(
+      changePasswordDto.password,
+    );
+
+    const user = await this.userModel.findByIdAndUpdate(
+      { userId },
+      { password: hashedPassword },
+    );
+
+    if (!user) throw new UnauthorizedException();
   }
 
   private async signToken<T>(

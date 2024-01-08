@@ -23,14 +23,20 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     const responseBody = {
       statusCode: httpStatus,
-      message: exception.message,
+      //@ts-expect-error ...
+      message: exception.getResponse?.().message || exception.message,
     };
+
+    console.log(exception);
+    console.log(exception.message);
 
     if (exception.message.startsWith('E11000')) {
       responseBody.message = 'Повторяющийся значение';
     }
 
-    console.log(responseBody.message);
+    if (exception.message.includes('(expected size is less than 1048576)')) {
+      responseBody.message = 'Слишком большой файл';
+    }
 
     httpAdapter.reply(ctx.getResponse(), responseBody, httpStatus);
   }
