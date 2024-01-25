@@ -3,12 +3,12 @@ import { Module } from '@nestjs/common';
 import { IamModule } from './iam/iam.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
-import { UsersController } from './users/users.controller';
 import { APP_FILTER } from '@nestjs/core';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { ProductsModule } from './products/products.module';
 import { MulterModule } from '@nestjs/platform-express';
+import { UserModule } from "./users/user.module";
 
 @Module({
   imports: [
@@ -41,8 +41,8 @@ import { MulterModule } from '@nestjs/platform-express';
     }),
     IamModule,
     ProductsModule,
+    UserModule
   ],
-  controllers: [UsersController],
   providers: [
     {
       provide: APP_FILTER,

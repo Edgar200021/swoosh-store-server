@@ -5,7 +5,6 @@ export const Cookie = createParamDecorator(
   (field: string, ctx: ExecutionContext) => {
     const req = ctx.switchToHttp().getRequest<Request>();
 
-    console.log(req.signedCookies);
     return req.signedCookies[field];
   },
 );

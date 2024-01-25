@@ -11,8 +11,8 @@ import {
   ParseFilePipe,
   MaxFileSizeValidator,
   FileTypeValidator,
-  Query,
-} from '@nestjs/common';
+  Query, HttpStatus, HttpCode
+} from "@nestjs/common";
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -20,6 +20,8 @@ import { FileInterceptor } from '@nestjs/platform-express';
 
 import { unlinkSync } from 'fs';
 import { ProductQueryParamsDto } from './dto/product-query-params.dto';
+import { QueryService } from "../common/services/query.service";
+import mongoose from "mongoose";
 
 @Controller('products')
 export class ProductsController {
@@ -27,13 +29,12 @@ export class ProductsController {
 
   @Post()
   create(@Body() createProductDto: CreateProductDto) {
-    //return this.productsService.create(createProductDto);
-    return this.productsService.createAll();
+    return this.productsService.create(createProductDto);
   }
 
   @Get()
   async findAll(@Query() productQueryParamsDto: ProductQueryParamsDto) {
-    const obj = this.transformFilterObj<ProductQueryParamsDto>(
+    const obj = QueryService.transformFilterObj<ProductQueryParamsDto>(
       productQueryParamsDto,
     );
 
@@ -44,22 +45,20 @@ export class ProductsController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.productsService.findOne(+id);
+    return this.productsService.findOne(new mongoose.Types.ObjectId(id));
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
-    return this.productsService.update(+id, updateProductDto);
+    return this.productsService.update(new mongoose.Types.ObjectId(id), updateProductDto);
   }
 
   @Delete(':id')
+  @HttpCode(204)
   remove(@Param('id') id: string) {
-    return this.productsService.remove(+id);
+    return this.productsService.remove(new mongoose.Types.ObjectId(id));
   }
-  @Delete('')
-  removeAll(@Param('id') id: string) {
-    return this.productsService.removeAll();
-  }
+
 
   @Post('upload-image')
   @UseInterceptors(FileInterceptor('image', { dest: 'uploads' }))
@@ -81,35 +80,5 @@ export class ProductsController {
     return { image };
   }
 
-  private transformFilterObj<T>(queryObj: { [key in keyof T]: T[key] }) {
-    const map = new Map(Object.entries(queryObj));
-    const symbols = {
-      '<=': '$lte',
-      '>=': '$gte',
-      '>': '$gt',
-      '<': '$lt',
-    };
 
-    map.forEach((val, key) => {
-      const regex = key.match(new RegExp(Object.keys(symbols).join('|')));
-
-      if (!regex) {
-        return;
-      }
-
-      const prefix = key.slice(0, regex.index);
-
-      if (map.has(prefix)) {
-        map.get(prefix)[symbols[regex[0]]] = map.get(key);
-        map.delete(key);
-        return;
-      }
-
-      map.set(prefix, {});
-      map.set(prefix, { [symbols[regex[0]]]: map.get(key) });
-      map.delete(key);
-    });
-
-    return Object.fromEntries(map) as T;
-  }
 }

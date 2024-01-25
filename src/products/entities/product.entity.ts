@@ -100,13 +100,29 @@ export class Product extends Document {
 export const ProductSchema = SchemaFactory.createForClass(Product);
 
 export const ProductSchemaFactory = () => {
+
   ProductSchema.pre<Product>('save', function (next) {
     if (this.discount) {
+
       this.priceDiscount = this.price * (1 - this.discount / 100);
     }
 
     next();
   });
 
+  ProductSchema.post('findOneAndUpdate', async function () {
+    const docToUpdate:Product = await this.model.findOne(this.getQuery());
+    const {price, discount} = this.getUpdate()?.['$set']
+
+    if (!price && !discount) return
+
+    docToUpdate.price = price || docToUpdate.price
+    docToUpdate.discount = discount || docToUpdate.discount
+
+    docToUpdate.priceDiscount = docToUpdate.price * (1 - docToUpdate.discount / 100);
+
+    await docToUpdate.save()
+
+  });
   return ProductSchema;
 };

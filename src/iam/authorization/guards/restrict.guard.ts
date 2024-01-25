@@ -13,12 +13,15 @@ export class RestrictGuard implements CanActivate {
     const activeUser: IActiveUser = context
       .switchToHttp()
       .getRequest<Request>()[REQUEST_USER_KEY];
+
+    if (!activeUser) return true;
+
+
     const roles = this.reflector.getAllAndOverride<UserRoles[]>(
       ROLES_METADATA_KEY,
       [context.getHandler(), context.getClass()],
     ) || [UserRoles.USER];
 
-    if (!activeUser) return true;
 
     return roles.some((value) => activeUser.role.includes(value));
   }

@@ -7,11 +7,15 @@ export class User extends Document {
   @Prop()
   name: string;
 
+  @Prop()
+  avatar: string
+
   @Prop({
     required: [true, 'Укажите эл.адрес пользователя'],
     unique: true,
   })
   email: string;
+
 
   @Prop({
     required: [true, 'Укажите пароль пользователя'],

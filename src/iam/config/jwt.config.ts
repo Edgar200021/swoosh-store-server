@@ -8,7 +8,6 @@ export default registerAs('jwt', () => ({
     signed: true,
     sameSite: true,
     httpOnly: true,
-    maxAge: Number(process.env.JWT_REFRESH_TOKEN_TTL),
-    path: '/',
+    maxAge: 1000 * 60 * 60 * 24 * 30
   },
 }));

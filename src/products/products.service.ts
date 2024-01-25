@@ -1,28 +1,22 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from "@nestjs/common";
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { Product } from './entities/product.entity';
 import { Model } from 'mongoose';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
-import { readFileSync } from 'fs';
-import { join } from 'path';
 import { ProductQueryParamsDto } from './dto/product-query-params.dto';
-import { MongooseQueryService } from 'src/common/services/mongoose-query.service';
-import { QueryParamsDto } from 'src/common/dto/query-params.dto';
+import { QueryService } from "../common/services/query.service";
+import { NotFoundError } from "rxjs";
+import { User } from "../users/entity/user.entity";
 
 @Injectable()
 export class ProductsService {
-  private readonly products: Buffer;
   constructor(
     @InjectModel(Product.name) private readonly productModel: Model<Product>,
     private readonly clodunaryService: CloudinaryService,
   ) {
-    this.products = JSON.parse(
-      readFileSync(join('src/devData/products.json'), {
-        encoding: 'utf-8',
-      }),
-    );
+
   }
 
   async create(createProductDto: CreateProductDto) {
@@ -33,7 +27,7 @@ export class ProductsService {
     const skip =
       productQueryParamsDto.page * productQueryParamsDto.limit -
       productQueryParamsDto.limit;
-    const filters = this.excludeFields<ProductQueryParamsDto>(
+    const filters = QueryService.excludeFields<ProductQueryParamsDto>(
       productQueryParamsDto,
     );
 
@@ -49,35 +43,37 @@ export class ProductsService {
     return { quantity, products };
   }
 
-  async findOne(id: number) {
-    return `This action returns a #${id} product`;
+  async findOne(id: User['id']) {
+    const product = await this.productModel.findById(id)
+
+    if (!product) {
+      throw new NotFoundException("Продукт с таким id не нейден")
+    }
+
+    return product
   }
 
-  async update(id: number, updateProductDto: UpdateProductDto) {
-    return `This action updates a #${id} product`;
+  async update(id: User["id"], updateProductDto: UpdateProductDto) {
+
+    const updatedProduct = await this.productModel.findByIdAndUpdate(id, updateProductDto, {new:true, runValidators: true})
+
+    if (!updatedProduct)  throw new NotFoundException("Продукт с таким id не нейден")
+
+    return updatedProduct
   }
 
-  async remove(id: number) {
-    return `This action removes a #${id} product`;
+  async remove(id: User['id']) {
+
+    const user = await this.productModel.findOneAndDelete(id)
+
+    if (!user) throw new NotFoundException("Продукт с таким id не нейден")
+
+   return null
   }
 
   async uploadImage(file: Express.Multer.File) {
     return this.clodunaryService.uploadFile(file);
   }
 
-  async removeAll() {
-    await this.productModel.deleteMany();
-  }
 
-  async createAll() {
-    await this.productModel.create(this.products);
-  }
-
-  private excludeFields<T extends Partial<QueryParamsDto>>(obj: T) {
-    const fields = new Set(['sort', 'fields', 'page', 'limit']);
-
-    return Object.fromEntries(
-      Object.entries(obj).filter(([key]) => !fields.has(key)),
-    );
-  }
 }

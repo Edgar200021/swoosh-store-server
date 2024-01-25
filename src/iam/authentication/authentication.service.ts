@@ -207,10 +207,9 @@ export class AuthenticationService {
       this.signToken(user._id, this.jwtConfiguration.refreshTokenTtl),
     ]);
 
-    await Promise.all([
-      this.tokenModel.findOneAndDelete({ user: user._id }),
-      this.tokenModel.create({ refreshToken, user: user._id }),
-    ]);
+
+      await this.tokenModel.findOneAndDelete({ user: user._id })
+      await this.tokenModel.create({ refreshToken, user: user._id })
 
     return { accessToken, refreshToken };
   }
