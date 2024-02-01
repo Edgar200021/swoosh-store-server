@@ -71,6 +71,39 @@ export class ProductsService {
    return null
   }
 
+  async getFilters() {
+    const filters = await this.productModel.aggregate([
+      {
+        $unwind: '$colors',
+      },
+      {
+        $unwind: '$size'
+      },
+      {
+        $group: {
+          _id: null,
+          minPrice: {
+             $min: '$price'
+          },
+          maxPrice: {
+            $max: '$price'
+          },
+          colors: {
+            $addToSet: '$colors'
+          },
+          size: {
+            $addToSet: '$size'
+          },
+          material: {
+            $addToSet: '$material'
+          }
+        }
+      }
+    ])
+
+    return filters[0]
+  }
+
   async uploadImage(file: Express.Multer.File) {
     return this.clodunaryService.uploadFile(file);
   }

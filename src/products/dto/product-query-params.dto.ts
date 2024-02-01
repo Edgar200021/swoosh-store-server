@@ -77,7 +77,7 @@ export class ProductQueryParamsDto extends PartialType(QueryParamsDto) {
 
   @IsOptional()
   @IsInt({ message: 'Размер продукта должно быть числом' })
-  size: string;
+  size: number;
 
   @IsOptional()
   @IsEnum(Materials, {

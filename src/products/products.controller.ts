@@ -43,6 +43,33 @@ export class ProductsController {
     return { quantity, data: products };
   }
 
+  @Get('filters')
+  getFilters() {
+    return this.productsService.getFilters()
+  }
+
+
+  @Post('upload-image')
+  @UseInterceptors(FileInterceptor('image', { dest: 'uploads' }))
+  async uploadImage(
+      @UploadedFile(
+          new ParseFilePipe({
+            fileIsRequired: true,
+            validators: [
+              new MaxFileSizeValidator({ maxSize: 1024 * 1024 }),
+              new FileTypeValidator({ fileType: 'image' }),
+            ],
+          }),
+      )
+          file: Express.Multer.File,
+  ) {
+    const image = await this.productsService.uploadImage(file);
+    unlinkSync(file.path);
+
+    return { image };
+  }
+
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.productsService.findOne(new mongoose.Types.ObjectId(id));
@@ -57,27 +84,6 @@ export class ProductsController {
   @HttpCode(204)
   remove(@Param('id') id: string) {
     return this.productsService.remove(new mongoose.Types.ObjectId(id));
-  }
-
-
-  @Post('upload-image')
-  @UseInterceptors(FileInterceptor('image', { dest: 'uploads' }))
-  async uploadImage(
-    @UploadedFile(
-      new ParseFilePipe({
-        fileIsRequired: true,
-        validators: [
-          new MaxFileSizeValidator({ maxSize: 1024 * 1024 }),
-          new FileTypeValidator({ fileType: 'image' }),
-        ],
-      }),
-    )
-    file: Express.Multer.File,
-  ) {
-    const image = await this.productsService.uploadImage(file);
-    unlinkSync(file.path);
-
-    return { image };
   }
 
 
