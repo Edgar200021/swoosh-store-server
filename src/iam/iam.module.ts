@@ -13,6 +13,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { AuthenticationGuard } from './authentication/guard/authentication.guard';
 import { RestrictGuard } from './authorization/guards/restrict.guard';
 import { EmailService } from 'src/common/services/mail.service';
+import {Cart, CartSchema} from "../cart/entity/cart.entity";
 
 @Module({
   imports: [
@@ -27,6 +28,10 @@ import { EmailService } from 'src/common/services/mail.service';
         name: Token.name,
         useFactory: () => TokenSchema,
       },
+      {
+        name: Cart.name,
+        useFactory: () => CartSchema
+      }
     ]),
   ],
   providers: [

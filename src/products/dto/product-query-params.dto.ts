@@ -73,7 +73,7 @@ export class ProductQueryParamsDto extends PartialType(QueryParamsDto) {
 
   @IsOptional()
   @IsString({ message: 'Цвет должно быть формата строка' })
-  color: string;
+  colors: string;
 
   @IsOptional()
   @IsInt({ message: 'Размер продукта должно быть числом' })

@@ -22,12 +22,14 @@ import { EmailService } from 'src/common/services/mail.service';
 import { randomUUID } from 'crypto';
 import { ForgotPasswordDto } from '../dto/forgot-password.dto';
 import { ResetPasswordDto } from '../dto/reset-password.dto';
+import {Cart} from "../../cart/entity/cart.entity";
 
 @Injectable()
 export class AuthenticationService {
   constructor(
     @InjectModel(User.name) private readonly userModel: Model<User>,
     @InjectModel(Token.name) private readonly tokenModel: Model<Token>,
+    @InjectModel(Cart.name) private readonly cartModel: Model<Cart>,
     @Inject(jwtConfig.KEY)
     private readonly jwtConfiguration: ConfigType<typeof jwtConfig>,
     private readonly jwtService: JwtService,
@@ -52,6 +54,11 @@ export class AuthenticationService {
       ...signUpDto,
       password: hashedPassword,
     });
+
+    if (!(await this.cartModel.findOne({user: user._id }))) {
+      await this.cartModel.create({user: user._id})
+    }
+
 
     const { accessToken, refreshToken } = await this.generateTokens(user);
 

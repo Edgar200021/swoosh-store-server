@@ -20,9 +20,10 @@ export  class QueryService{
       '<': '$lt',
     };
 
+
+
     map.forEach((_, key) => {
       const regex = key.match(new RegExp(Object.keys(symbols).join('|')));
-
       if (!regex) {
         return;
       }
@@ -30,6 +31,25 @@ export  class QueryService{
       const prefix = key.slice(0, regex.index);
 
       if (map.has(prefix)) {
+
+        if (prefix === 'price') {
+          map.set('$or', [{
+            priceDiscount: {
+              $exists: true,
+              $ne: null,
+              [symbols[regex[0]]]: map.get(key),
+            }
+          },
+            {
+              price: {
+                $exists: true,
+                $ne: null,
+                [symbols[regex[0]]]: map.get(key)
+              }
+            }]);
+        map.delete(key)
+        return
+        }
         map.get(prefix)[symbols[regex[0]]] = map.get(key);
         map.delete(key);
         return;

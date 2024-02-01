@@ -9,6 +9,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
 import { ProductsModule } from './products/products.module';
 import { MulterModule } from '@nestjs/platform-express';
 import { UserModule } from "./users/user.module";
+import { CartModule } from './cart/cart.module';
 
 @Module({
   imports: [
@@ -41,7 +42,8 @@ import { UserModule } from "./users/user.module";
     }),
     IamModule,
     ProductsModule,
-    UserModule
+    UserModule,
+    CartModule
   ],
   providers: [
     {

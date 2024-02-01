@@ -31,6 +31,7 @@ export class ProductsService {
       productQueryParamsDto,
     );
 
+
     const products = await this.productModel
       .find(filters)
       .select(productQueryParamsDto.fields)
