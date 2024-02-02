@@ -1,4 +1,4 @@
-import {Controller, Delete, Get, HttpCode, HttpStatus, Post, Put} from '@nestjs/common';
+import {Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, Put, Query} from '@nestjs/common';
 import {User} from "../iam/decorators/user.decorator";
 import {User as UserModel} from '../users/entity/user.entity'
 import {CartService} from "./cart.service";
@@ -8,6 +8,7 @@ import {AddCartProductDto} from "./dto/add-cart-product.dto";
 import mongoose from "mongoose";
 import {UpdateCartProductDto} from "./dto/update-cart-product.dto";
 import {DeleteCartProductDto} from "./dto/delete-cart-product.dto";
+import {QueryParamsDto} from "../common/dto/query-params.dto";
 
 
 @Auth(AuthType.Bearer)
@@ -17,32 +18,38 @@ export class CartController {
 	constructor(private readonly cartService: CartService) {}
 
 	@Get()
-	async getAllCartProducts(@User('id') userId: UserModel['_id']) {
+	async getAllCartProducts(@User('id') userId: UserModel['_id'], @Query() queryParamsDto: QueryParamsDto) {
 
-		const cartProducts =  await this.cartService.getAllCardProducts(new mongoose.Types.ObjectId(userId))
+		const {total, data} =  await this.cartService.getAllCardProducts(new mongoose.Types.ObjectId(userId), queryParamsDto)
 
-		return {quantity: cartProducts.length, data: cartProducts}
+		return {quantity: data.length, data: {
+				cartProducts: data,
+				totalPrice: total.totalPrice ??  0,
+				totalQuantity: total.totalQuantity ?? 0
+			}}
 	}
 
 
 	@Post()
-@HttpCode(HttpStatus.CREATED)
-async	addCartProduct(@User('id') userId: UserModel['_id'], addCartProductDto: AddCartProductDto) {
-		await this.cartService.addCartProduct(new mongoose.Types.ObjectId(userId), addCartProductDto)
-	}
+	@HttpCode(HttpStatus.CREATED)
+	async	addCartProduct(@User('id') userId: UserModel['_id'],  @Body() addCartProductDto: AddCartProductDto) {
+			await this.cartService.addCartProduct(new mongoose.Types.ObjectId(userId), addCartProductDto)
+			return null
+		}
 
 	@Put()
-	async updateCartProduct(@User('id') userId: UserModel['_id'], updateCartProductDto: UpdateCartProductDto) {
+	async updateCartProduct(@User('id') userId: UserModel['_id'], @Body() updateCartProductDto: UpdateCartProductDto) {
 		await this.cartService.updateCartProduct(userId,updateCartProductDto)
 		return null
 	}
 
 
 
-	@Delete()
+	@Delete(':id')
 	@HttpCode(204)
-	async deleteCartProduct(@User('id') userId: UserModel['_id'], deleteCartProductDto: DeleteCartProductDto) {
-		await this.cartService.deleteCartProduct(userId,deleteCartProductDto)
+	async deleteCartProduct(@User('id') userId: UserModel['_id'], @Param('id') cartProductId: string) {
+		console.log(cartProductId)
+		await this.cartService.deleteCartProduct(userId,cartProductId)
 		return null
 	}
 }

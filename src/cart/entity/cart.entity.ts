@@ -5,7 +5,7 @@ import {Product} from "../../products/entities/product.entity";
 
 
 @Schema()
-class CartProduct extends Document {
+export class CartProduct extends Document {
 	@Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Product' })
 	product: Product
 
@@ -22,13 +22,31 @@ class CartProduct extends Document {
 
 @Schema({toJSON: {virtuals: true}, toObject: {virtuals: true}})
 export class Cart extends Document {
-	@Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User' })
+	@Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User', unique: true })
 	user: User;
 
-	@Prop()
+	@Prop({ type: [CartProduct] })
 	products: CartProduct[]
 }
 
 export const CartSchema = SchemaFactory.createForClass(Cart)
 
-CartSchema.index({user: 1}, {unique: true})
+export const CartSchemaFactory = () => {
+
+	CartSchema.pre(/^find/,  function(next) {
+		//@ts-expect-error ...
+		this.populate({
+			path: "products",
+			populate: {
+				path: "product",
+				model: "Product",
+				select: "image title price priceDiscount ",
+			}
+		}).select('-user')
+
+		next()
+	})
+
+		return CartSchema;
+}
+
