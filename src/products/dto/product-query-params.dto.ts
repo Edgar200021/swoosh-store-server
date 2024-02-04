@@ -1,6 +1,7 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { Transform } from 'class-transformer';
 import {
+  IsBoolean,
   IsEnum,
   IsInt,
   IsNumber,
@@ -11,7 +12,7 @@ import {
   Min,
 } from 'class-validator';
 import { QueryParamsDto } from 'src/common/dto/query-params.dto';
-import { For, Materials } from '../enums/product.enum';
+import {For, Materials, Sale} from '../enums/product.enum';
 
 export class ProductQueryParamsDto extends PartialType(QueryParamsDto) {
   @IsOptional()
@@ -90,4 +91,12 @@ export class ProductQueryParamsDto extends PartialType(QueryParamsDto) {
     message: `Значение отличается от ${Object.values(For).join(',')}`,
   })
   for: For;
+
+  @IsOptional()
+  @IsEnum(Sale, {
+    message: `Значение отличается от ${Object.values(Sale).join(',')}`,
+  })
+  sale: Sale;
+
+
 }

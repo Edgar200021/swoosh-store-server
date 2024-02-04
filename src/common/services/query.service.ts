@@ -19,10 +19,16 @@ export  class QueryService{
       '>': '$gt',
       '<': '$lt',
     };
-
-
-
     map.forEach((_, key) => {
+      if (key === 'sale') {
+        map.set('priceDiscount',map.get(key) === 'true' ? {
+        '$ne':  null
+        } : null)
+        map.delete(key)
+
+        return
+      }
+
       const regex = key.match(new RegExp(Object.keys(symbols).join('|')));
       if (!regex) {
         return;

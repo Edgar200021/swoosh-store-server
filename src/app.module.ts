@@ -10,6 +10,7 @@ import { ProductsModule } from './products/products.module';
 import { MulterModule } from '@nestjs/platform-express';
 import { UserModule } from "./users/user.module";
 import { CartModule } from './cart/cart.module';
+import { ReviewModule } from './review/review.module';
 
 @Module({
   imports: [
@@ -43,7 +44,8 @@ import { CartModule } from './cart/cart.module';
     IamModule,
     ProductsModule,
     UserModule,
-    CartModule
+    CartModule,
+    ReviewModule
   ],
   providers: [
     {

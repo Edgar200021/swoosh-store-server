@@ -32,16 +32,15 @@ export class ProductsService {
     );
 
 
-    const products = await this.productModel
-      .find(filters)
-      .select(productQueryParamsDto.fields)
-      .sort(productQueryParamsDto.sort)
-      .limit(productQueryParamsDto.limit)
-      .skip(skip);
+    const [products, quantity] = await Promise.all([this.productModel
+        .find(filters)
+        .select(productQueryParamsDto.fields)
+        .sort(productQueryParamsDto.sort)
+        .limit(productQueryParamsDto.limit)
+        .skip(skip),this.productModel.countDocuments(filters) ])
 
-    const quantity = await this.productModel.countDocuments(filters);
 
-    return { quantity, products };
+    return {products, quantity };
   }
 
   async findOne(id: User['id']) {

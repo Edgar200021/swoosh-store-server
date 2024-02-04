@@ -12,3 +12,8 @@ export enum Materials {
   NYLON = 'нейлон',
   FABRIC = 'ткань',
 }
+
+export enum Sale {
+  TRUE = 'true',
+  FALSE = 'false'
+}

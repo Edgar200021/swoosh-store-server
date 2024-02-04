@@ -38,6 +38,10 @@ export class ProductsController {
       productQueryParamsDto,
     );
 
+    console.log(productQueryParamsDto)
+
+    console.log(obj)
+
     const { quantity, products } = await this.productsService.findAll(obj);
 
     return { quantity, data: products };
